@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuer dich &hearts;</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0a0a0a}
+#wrap{position:relative;min-height:100vh;overflow-x:hidden;font-family:'Lato',sans-serif}
+#videobg{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  min-width:100%;min-height:100%;
+  width:auto;height:auto;
+  z-index:0;opacity:0.38;
+  object-fit:cover;pointer-events:none;
+}
+#overlay{
+  position:fixed;inset:0;
+  background:linear-gradient(to bottom,rgba(8,8,8,0.6) 0%,rgba(8,8,8,0.25) 50%,rgba(8,8,8,0.75) 100%);
+  z-index:1;pointer-events:none;
+}
+#content{position:relative;z-index:2;padding:2.5rem 1.2rem 5rem}
+#header{text-align:center;margin-bottom:3rem}
+#header h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  color:#f5ede0;letter-spacing:0.02em;line-height:1.25;
+}
+#header h1 em{font-style:italic;color:#e8c9a0}
+#header p{
+  color:rgba(245,237,224,0.5);
+  font-size:0.78rem;letter-spacing:0.14em;
+  text-transform:uppercase;margin-top:0.6rem;font-weight:300;
+}
+#days-left{
+  display:inline-block;
+  background:rgba(232,201,160,0.12);
+  border:1px solid rgba(232,201,160,0.28);
+  border-radius:50px;padding:0.35rem 1.3rem;
+  color:#e8c9a0;font-size:0.8rem;
+  letter-spacing:0.1em;margin-top:0.9rem;
+}
+#grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:14px;max-width:980px;margin:0 auto;
+}
+.door{
+  cursor:pointer;border-radius:14px;
+  aspect-ratio:1;position:relative;
+  border:1px solid rgba(232,201,160,0.18);
+  background:rgba(18,16,12,0.65);
+  backdrop-filter:blur(6px);
+  transition:transform 0.2s ease,border-color 0.25s ease,box-shadow 0.25s ease;
+  display:flex;align-items:center;
+  justify-content:center;flex-direction:column;
+  gap:4px;
+}
+.door.future{cursor:not-allowed;opacity:0.38}
+.door.opened{border-color:rgba(232,201,160,0.45)}
+.door:not(.future):hover{
+  transform:scale(1.05);
+  border-color:rgba(232,201,160,0.55);
+  box-shadow:0 0 20px rgba(232,201,160,0.1);
+}
+.door-num{
+  font-family:'Playfair Display',serif;
+  font-size:1.65rem;color:rgba(245,237,224,0.72);line-height:1;
+}
+.door-date{
+  font-size:0.64rem;color:rgba(245,237,224,0.38);
+  letter-spacing:0.09em;text-transform:uppercase;
+}
+.door-icon{font-size:1.7rem}
+.door.future .door-num{color:rgba(245,237,224,0.2)}
+.door.today-door{
+  border-color:rgba(232,201,160,0.65);
+  box-shadow:0 0 22px rgba(232,201,160,0.14);
+}
+.door.today-door .door-num{color:#e8c9a0}
+
+/* Modal */
+#modal-bg{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(4,4,4,0.88);
+  backdrop-filter:blur(10px);
+  align-items:center;justify-content:center;
+}
+#modal-bg.show{display:flex}
+#modal{
+  background:rgba(22,19,14,0.98);
+  border:1px solid rgba(232,201,160,0.3);
+  border-radius:20px;max-width:480px;width:92%;
+  padding:2.5rem 2rem 2rem;
+  text-align:center;position:relative;
+  animation:modalIn 0.3s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:none}}
+#modal-close{
+  position:absolute;top:14px;right:18px;
+  background:none;border:none;
+  color:rgba(245,237,224,0.35);
+  font-size:1.3rem;cursor:pointer;line-height:1;
+  transition:color 0.2s;
+}
+#modal-close:hover{color:#e8c9a0}
+#modal-day{
+  font-family:'Playfair Display',serif;
+  font-size:3.2rem;color:#e8c9a0;line-height:1;
+}
+#modal-date-label{
+  font-size:0.72rem;letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:rgba(245,237,224,0.4);margin-top:5px;font-weight:300;
+}
+#modal-img-wrap{
+  margin:1.4rem 0 1.1rem;
+  border-radius:13px;overflow:hidden;
+  background:rgba(45,40,32,0.6);
+  min-height:160px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(232,201,160,0.12);
+}
+#modal-img{display:none;width:100%;border-radius:13px;object-fit:cover;max-height:320px}
+#modal-img-ph{
+  color:rgba(245,237,224,0.28);
+  font-size:0.82rem;font-style:italic;padding:2rem;
+}
+#modal-msg{
+  font-family:'Playfair Display',serif;
+  font-size:1.08rem;color:#f5ede0;
+  line-height:1.75;font-style:italic;
+}
+#modal-sub{
+  font-size:0.8rem;color:rgba(245,237,224,0.42);
+  margin-top:0.75rem;font-weight:300;letter-spacing:0.04em;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <video id="videobg" autoplay muted loop playsinline>
+    <source src="Untitled design-3.mp4" type="video/mp4">
+  </video>
+  <div id="overlay"></div>
+  <div id="content">
+    <div id="header">
+      <h1>F&#252;r dich, <em>bis du wieder da bist</em> &#x1F90D;</h1>
+      <p>San Francisco &#x2192; Frankfurt &middot; 12. Mai &ndash; 15. Juni</p>
+      <div id="days-left">L&#228;dt...</div>
+    </div>
+    <div id="grid"></div>
+  </div>
+</div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <button id="modal-close" onclick="closeModal()">&#x2715;</button>
+    <div id="modal-day">1</div>
+    <div id="modal-date-label">12. Mai</div>
+    <div id="modal-img-wrap">
+      <img id="modal-img" alt="Unser Foto">
+      <div id="modal-img-ph">&#x1F4F8; Euer Foto</div>
+    </div>
+    <div id="modal-msg"></div>
+    <div id="modal-sub"></div>
+  </div>
+</div>
+
+<script>
+var DOORS = [
+  { img:"bild1.png",     msg:"Das k\u00f6nnten wir gerade tun aber du bist ja am vibecoden...", sub:"34 T\u00fcrchen noch. Aber ich hab dich lieb, also geht das." },
+  { img:"bild2.png",     msg:"Dieses Gesicht. Ich k\u00f6nnte es stundenlang anschauen und w\u00fcrde immer noch mehr wollen.", sub:"Schick mir ein Selfie aus SF? Bitte bitte bitte." },
+  { img:"bild3.png",     msg:"Kleines Chaos, riesiges Herz \u2014 du bist das S\u00fc\u00dfeste, das mir je passiert ist.", sub:"Ich vermiss dein Lachen so sehr, dass es fast wehtut." },
+  { img:"bild4.png",     msg:"Stell dir vor: wir, ein kleines Haus, ein Hund der uns morgens weckt. Ich will das mit dir.", sub:"Irgendwann. Aber ich bin geduldig. (Meistens.)" },
+  { img:"bild5.png",     msg:"Diese kleinen Jungs \u2014 okay, das war ein Spa\u00df. Oder? Ich liebe dich trotzdem.", sub:"(Du wirst der beste sein, ich wei\u00df das schon jetzt.)" },
+  { img:"bild6.png",     msg:"Picknick, du, Sonne \u2014 das ist meine Definition von perfekt. Kein Aber.", sub:"Ich reserviere schon mal einen Sonnenuntergang f\u00fcr uns." },
+  { img:"bild7.png",     msg:"Schau sie an \u2014 meine liebsten Menschen. Und dann fehlst nur noch du auf dem Bild.", sub:"Sie m\u00f6gen dich genauso sehr wie ich. Fast." },
+  { img:"bild8.PNG",     msg:"Sonnenunterg\u00e4nge sehen seit dir anders aus \u2014 sch\u00f6ner, w\u00e4rmer, wie ein Versprechen.", sub:"Fang welche f\u00fcr mich ein dr\u00fcben. Ich sammel sie auf." },
+  { img:"bild9.png",     msg:"Alle Gesichter die ich liebe, auf einem Bild \u2014 aber das sch\u00f6nste fehlt.", sub:"Du. Nat\u00fcrlich du. Immer du." },
+  { img:"bild10.PNG",    msg:"Zuhause ist nicht vier W\u00e4nde. Zuhause ist, wenn du in der T\u00fcr stehst.", sub:"Ich warte. Ich warte so gerne auf dich." },
+  { img:"bild11.PNG",    msg:"Ich sehe dich und denke: ja. Einfach ja. Alles ja.", sub:"Noch so viele Abenteuer mit dir \u2014 ich kann es kaum erwarten." },
+  { img:"IMG_2215.jpeg", msg:"Abends ausgehen, deine Hand in meiner \u2014 ich will das alles wiederhaben.", sub:"Ich z\u00e4hle die Tage. Buchst\u00e4blich. Gerade." },
+  { img:"bild13.PNG",    msg:"Du strahlst selbst auf Fotos. Ich werd jedes Mal ganz weich, wenn ich dich so sehe.", sub:"Nur noch ein bisschen. Dann bist du wieder hier." },
+  { img:"IMG_4542.jpeg", msg:"Essen mit dir ist kein Alltag \u2014 es ist immer ein kleines Fest.", sub:"Was darf ich dir kochen, wenn du zur\u00fcck bist? Ich fang schon mal an zu planen." },
+  { img:"IMG_4707.jpeg", msg:"Egal was, egal wann \u2014 mit dir bin ich genau richtig.", sub:"Noch ein paar T\u00fcrchen. Du schaffst das. Ich auch." },
+  { img:"IMG_4509.jpg",  msg:"Du leuchtest auch in der Dunkelheit. Das ist keine Schmeichelei, das ist einfach wahr.", sub:"Ich sehe dich \u2014 immer. Auch von hier." },
+  { img:"IMG_5637 2.PNG",msg:"Das bist du. Einfach du. Und das allein macht meinen Tag besser.", sub:"Danke, dass du existierst. Im Ernst." },
+  { img:"bild1.png",     msg:"Halbzeit, Liebling! Du bist schon so weit \u2014 und ich bin so stolz auf dich.", sub:"Und ich hab schon Pl\u00e4ne f\u00fcr deinen ersten Abend zur\u00fcck. Viele Pl\u00e4ne." },
+  { img:"bild2.png",     msg:"Diese Augen. Jedes. Mal. Ich bin so verloren in dir und find's wundersch\u00f6n.", sub:"Nur noch ein bisschen Geduld, dann bin ich wieder deine." },
+  { img:"bild3.png",     msg:"Kuscheln und Unsinn reden \u2014 das vermiss ich am meisten. Das mit dir.", sub:"Ich kauf schon Kekse. Deine Lieblingssorte nat\u00fcrlich." },
+  { img:"bild4.png",     msg:"Wir werden so unglaublich gl\u00fccklich sein. Das wei\u00df ich einfach, tief drin.", sub:"Und das ist keine Hoffnung \u2014 das ist ein Versprechen." },
+  { img:"bild5.png",     msg:"Du machst meine verr\u00fccktesten Tr\u00e4ume real. Weißt du das?", sub:"Danke. F\u00fcr alles. F\u00fcr dich." },
+  { img:"bild6.png",     msg:"Jeder Tag ohne dich macht mich dankbarer f\u00fcr jeden einzigen Tag mit dir.", sub:"Das war tiefgr\u00fcndig. Ich \u00fcberrasch mich manchmal selbst." },
+  { img:"bild7.png",     msg:"Du geh\u00f6rst zu uns. Zu mir. Du hast deinen Platz \u2014 und der ist freigehalten.", sub:"Beeil dich einfach ein bisschen. Nur ein bisschen." },
+  { img:"bild8.PNG",     msg:"Noch 10 Tage. Ich \u00fcbe schon das Ges\u00e4ße-Machen wenn du durch die T\u00fcr kommst.", sub:"Wir schauen den n\u00e4chsten Sonnenuntergang zusammen. Versprochen." },
+  { img:"bild9.png",     msg:"Alle Lieblingsmenschen auf einem Bild \u2014 aber mein allerliebster fehlt noch.", sub:"Nur noch kurz. Ich versprech's dir." },
+  { img:"bild10.PNG",    msg:"Hier wartet alles auf dich. Ich warte auf dich. Das hier ist deins.", sub:"Letzte Woche! Du machst das so gut." },
+  { img:"bild11.PNG",    msg:"Letzte Woche und ich z\u00e4hl die Stunden. Keine Schande, oder?", sub:"(Es ist keine Schande. Ich vermiss dich einfach zu sehr.)" },
+  { img:"IMG_2215.jpeg", msg:"Bald stehen wir wieder so nebeneinander \u2014 ohne Ozean, ohne Zeitunterschied, ohne Abstand.", sub:"Nur du und ich. Wie es sein soll." },
+  { img:"bild13.PNG",    msg:"Fast da. Fast hier. Fast zusammen.", sub:"Ich kauf Blumen. Rote. Oder deine Lieblingsfarbe. Sag's mir schnell noch." },
+  { img:"IMG_4542.jpeg", msg:"Vorletztes T\u00fcrchen! Morgen fliegst du schon \u2014 ich kann's immer noch kaum glauben.", sub:"Ich bin so aufgeregt, dass ich nicht schlafen kann. Wirklich nicht." },
+  { img:"IMG_4707.jpeg", msg:"Dein letzter voller Tag in San Francisco. Und dann\u2026", sub:"Dann geh\u00f6rst du wieder mir. Ich freu mich so sehr." },
+  { img:"IMG_4509.jpg",  msg:"Du bist gerade irgendwo \u00fcber dem Atlantik und fliegst nach Frankfurt \u2014 zu mir.", sub:"Ich warte am Flughafen. Nat\u00fcrlich warte ich am Flughafen." },
+  { img:"IMG_5637 2.PNG",msg:"Du bist wieder da. Endlich, endlich, ENDLICH.", sub:"Kein T\u00fcrchen mehr n\u00f6tig. Jetzt hab ich dich. Ich liebe dich." },
+  { img:"bild1.png",     msg:"Bonus-T\u00fcrchen: weil 34 einfach nicht genug waren, um dir zu sagen wie sehr ich dich vermisst hab.", sub:"Willkommen zur\u00fcck, Liebling. Ich hab dich so lieb." },
+];
+
+var months = ["Jan","Feb","M\u00e4r","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+var START = new Date(2026, 4, 12);
+
+function getDateForDoor(i){
+  var d = new Date(START);
+  d.setDate(d.getDate() + i);
+  return d;
+}
+
+function formatDate(d){
+  return d.getDate() + ". " + months[d.getMonth()];
+}
+
+function todayMidnight(){
+  var n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+function dayIndex(){
+  var t = todayMidnight();
+  return Math.floor((t - START) / 86400000);
+}
+
+function getOpened(){
+  try{ return JSON.parse(localStorage.getItem('kalender26_opened') || '{}'); }
+  catch(e){ return {}; }
+}
+
+function setOpened(idx){
+  var o = getOpened();
+  o[idx] = true;
+  localStorage.setItem('kalender26_opened', JSON.stringify(o));
+}
+
+function buildGrid(){
+  var grid = document.getElementById('grid');
+  var today = dayIndex();
+  var opened = getOpened();
+  var total = DOORS.length;
+
+  // days until return
+  var endDate = new Date(2026, 5, 15);
+  var diff = Math.ceil((endDate - todayMidnight()) / 86400000);
+  var el = document.getElementById('days-left');
+  if(diff <= 0){
+    el.innerHTML = '&#x1F389; Er ist wieder da!';
+  } else {
+    el.textContent = 'Noch ' + diff + ' Tag' + (diff===1?'':'e') + ' bis zum 15. Juni';
+  }
+
+  for(var i = 0; i < total; i++){
+    var door = document.createElement('div');
+    door.className = 'door';
+    var d = getDateForDoor(i);
+    var data = DOORS[i];
+    var avail = i <= today;
+    var isToday = i === today;
+
+    if(!avail){
+      door.classList.add('future');
+      door.innerHTML = '<span class="door-num">' + (i+1) + '</span>' +
+        '<span class="door-date">' + formatDate(d) + '</span>' +
+        '<span style="font-size:0.85rem;margin-top:4px;opacity:0.18">&#x1F512;</span>';
+    } else {
+      if(isToday) door.classList.add('today-door');
+      if(opened[i]) door.classList.add('opened');
+      var ico = opened[i] ? '&#x2713;' : '&#x1F381;';
+      door.innerHTML = '<span class="door-icon">' + ico + '</span>' +
+        '<span class="door-num">' + (i+1) + '</span>' +
+        '<span class="door-date">' + formatDate(d) + '</span>';
+      (function(idx, dat, dd){
+        door.onclick = function(){ openDoor(idx, dat, dd); };
+      })(i, data, d);
+    }
+
+    grid.appendChild(door);
+  }
+}
+
+function openDoor(i, data, d){
+  setOpened(i);
+  var doors = document.querySelectorAll('.door');
+  doors[i].classList.add('opened');
+  var ico = doors[i].querySelector('.door-icon');
+  if(ico) ico.innerHTML = '&#x2713;';
+
+  document.getElementById('modal-day').textContent = i+1;
+  document.getElementById('modal-date-label').textContent = formatDate(d) + ' \u00b7 T\u00fcrchen ' + (i+1);
+  document.getElementById('modal-msg').textContent = data.msg;
+  document.getElementById('modal-sub').textContent = data.sub;
+
+  var imgEl = document.getElementById('modal-img');
+  var ph = document.getElementById('modal-img-ph');
+  imgEl.src = data.img;
+  imgEl.style.display = 'block';
+  ph.style.display = 'none';
+  imgEl.onerror = function(){
+    imgEl.style.display = 'none';
+    ph.style.display = 'block';
+    ph.textContent = data.img;
+  };
+
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modal-bg').classList.remove('show');
+}
+
+document.getElementById('modal-bg').addEventListener('click', function(e){
+  if(e.target === this) closeModal();
+});
+
+buildGrid();
+</script>
+</body>
+</html>
